@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>JNCIA Study Hub - Học ôn JNCIA-Junos</title>
+
+<!-- SEO -->
+<meta name="description" content="Ứng dụng học ôn thi JNCIA-Junos với 107 câu hỏi chuẩn xác. Luyện tập, thi thử và theo dõi tiến độ học tập.">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#4a90d9">
+
+<!-- iOS PWA Support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JNCIA">
+<link rel="apple-touch-icon" href="/icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png">
+<link rel="apple-touch-startup-image" href="/icons/icon-512.png">
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72.png">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>🎓 JNCIA Study Hub</h1>
+  <h2>Ứng dụng học ôn thi JNCIA-Junos — 107 câu hỏi chuẩn xác</h2>
+  <div style="position:absolute; top:20px; left:30px; display:flex; gap:10px;">
+    <button class="lang-btn active" onclick="openSettings()" style="background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.3); font-size:16px; padding: 4px 10px;" title="Cài đặt AI">⚙️</button>
+  </div>
+  <div class="lang-toggle" id="langToggle">
+    <button class="lang-btn active" data-lang="both">EN / VI</button>
+    <button class="lang-btn" data-lang="vi">VI</button>
+    <button class="lang-btn" data-lang="en">EN</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-pane="study">📖 Học</button>
+  <button class="tab" data-pane="quiz">📝 Quiz</button>
+  <button class="tab" data-pane="topics">📚 Chủ đề</button>
+  <button class="tab" data-pane="progress">📊 Tiến độ</button>
+</nav>
+
+<main>
+  <!-- STUDY PANE -->
+  <div id="study" class="pane active">
+    <div class="controls">
+      <div>
+        <label>Chủ đề: </label>
+        <select id="topicFilter">
+          <option value="all">Tất cả (107)</option>
+        </select>
+      </div>
+      <div>
+        <label>Số câu/trang: </label>
+        <select id="pageSize">
+          <option>5</option>
+          <option selected>10</option>
+          <option>20</option>
+          <option>50</option>
+        </select>
+      </div>
+        <button class="btn btn-ghost" id="shuffleBtn">🔀 Xáo trộn</button>
+        <button class="btn btn-ghost" onclick="renderCurrent()" title="Xóa toàn bộ lựa chọn trên trang này để làm lại">🔄 Làm lại trang</button>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto;">
+          <button class="btn btn-sec" id="prevBtn">← Trước</button>
+          <span id="pageInfo" style="font-weight:600"></span>
+          <button class="btn btn-sec" id="nextBtn">Sau →</button>
+        </div>
+      </div>
+    <div id="questionsList"></div>
+    <div class="controls" style="justify-content: center; margin-top: 20px;">
+      <button class="btn btn-sec" id="prevBtnBottom">← Trước</button>
+      <button class="btn btn-ghost" onclick="renderCurrent()" title="Xóa toàn bộ lựa chọn trên trang này để làm lại">🔄 Làm lại trang</button>
+      <button class="btn btn-ghost" id="topBtnBottom">⬆ Về đầu</button>
+      <button class="btn btn-sec" id="nextBtnBottom">Sau →</button>
+    </div>
+  </div>
+
+  <!-- QUIZ PANE -->
+  <div id="quiz" class="pane">
+    <div id="quizSetup">
+      <h3 style="margin-bottom:14px">📝 Thi thử JNCIA</h3>
+      <div class="controls">
+        <div>
+          <label>Chủ đề: </label>
+          <select id="quizTopic"><option value="all">Tất cả</option></select>
+        </div>
+        <div>
+          <label>Số câu: </label>
+          <select id="quizCount">
+            <option>5</option><option selected>10</option><option>20</option>
+            <option>50</option><option value="107">Tất cả (107)</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="quizSkipKnown" style="width:16px;height:16px;cursor:pointer;accent-color:var(--pri)">
+          <label for="quizSkipKnown" style="cursor:pointer;font-size:0.9em;">⚡ Bỏ qua câu đã đúng</label>
+        </div>
+        <button class="btn btn-pri" id="startQuizBtn">▶ Bắt đầu</button>
+      </div>
+    </div>
+    <div id="quizArea" style="display:none">
+      <div class="quiz-progress"><div class="quiz-progress-fill" id="quizProg"></div></div>
+      <div id="quizQuestion" class="quiz-q"></div>
+      <div style="text-align:center;margin-top:14px">
+        <button class="btn btn-pri" id="quizSubmitBtn">Nộp đáp án</button>
+        <button class="btn btn-sec" id="quizNextBtn" style="display:none">Câu tiếp →</button>
+      </div>
+    </div>
+    <div id="quizResult" style="display:none"></div>
+  </div>
+
+  <!-- TOPICS PANE -->
+  <div id="topics" class="pane">
+    <h3 style="margin-bottom:14px">📚 Các chủ đề JNCIA-Junos</h3>
+    <div id="topicsGrid" class="topics-grid"></div>
+  </div>
+
+  <!-- PROGRESS PANE -->
+  <div id="progress" class="pane">
+    <h3 style="margin-bottom:14px">📊 Tiến độ học tập</h3>
+
+    <!-- STUDY PROGRESS -->
+    <div style="margin-bottom:6px">
+      <h4 style="display:flex;align-items:center;gap:8px;margin-bottom:10px">📖 Phần Học <span style="font-size:0.8em;font-weight:400;color:var(--text-secondary)">(đánh dấu thủ công)</span></h4>
+      <div id="progressStats" class="stat-grid"></div>
+      <div id="topicProgress"></div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+
+    <!-- QUIZ PROGRESS -->
+    <div style="margin-bottom:6px">
+      <h4 style="display:flex;align-items:center;gap:8px;margin-bottom:10px">📝 Phần Quiz <span style="font-size:0.8em;font-weight:400;color:var(--text-secondary)">(câu đã trả lời đúng)</span></h4>
+      <div id="quizProgressStats" class="stat-grid"></div>
+      <div id="quizTopicProgress"></div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-bad" id="resetBtn">🗑️ Reset tiến độ Học</button>
+      <button class="btn btn-bad" id="resetQuizBtn">🗑️ Reset tiến độ Quiz</button>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-content">
+    <h3>⚙️ Cài đặt AI Tutor</h3>
+    <p style="font-size: 0.9em; color: #666; margin-bottom: 16px;">Điền thông tin API để sử dụng tính năng Trợ lý ảo AI. Cấu hình sẽ được lưu an toàn trên trình duyệt của bạn.</p>
+    <div class="form-group">
+      <label>Base URL (Chuẩn OpenAI)</label>
+      <input type="text" id="aiBaseUrl" placeholder="Ví dụ: https://api.openai.com/v1">
+    </div>
+    <div class="form-group">
+      <label>Model Name</label>
+      <input type="text" id="aiModel" placeholder="Ví dụ: gpt-3.5-turbo">
+    </div>
+    <div class="form-group">
+      <label>API Key</label>
+      <input type="password" id="aiApiKey" placeholder="Nhập API Key của bạn...">
+    </div>
+    <div class="form-group">
+      <label>Model MML (Multi-Modal Name)</label>
+      <input type="text" id="aiModelMML" placeholder="Ví dụ: gpt-4-vision-preview">
+    </div>
+    <div class="form-group">
+      <label>Độ cao hộp thoại AI (px)</label>
+      <input type="number" id="aiChatHeight" placeholder="600" min="300" max="900" value="600">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSettings()">Hủy</button>
+      <button class="btn btn-pri" onclick="saveSettings()">Lưu cài đặt</button>
+    </div>
+  </div>
+</div>
+
+<script src="questions.js"></script>
+<script src="app.js"></script>
+<script>
+// Debug: Check if QUESTIONS and TOPICS loaded correctly
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM Loaded");
+    console.log("QUESTIONS:", typeof QUESTIONS, QUESTIONS ? QUESTIONS.length : 'undefined');
+    console.log("TOPICS:", typeof TOPICS, TOPICS ? TOPICS.length : 'undefined');
+    console.log("STATE.questions:", typeof STATE.questions, STATE.questions ? STATE.questions.length : 'undefined');
+    
+    if (typeof QUESTIONS === 'undefined') {
+        console.error("QUESTIONS is not defined!");
+        document.body.innerHTML = '<h1 style="color:red;">Error: QUESTIONS not loaded</h1>';
+    }
+    if (typeof TOPICS === 'undefined') {
+        console.error("TOPICS is not defined!");
+    }
+});
+</script>
+
+<!-- PWA Service Worker Registration -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then((reg) => {
+          console.log('[PWA] Service Worker registered:', reg.scope);
+        })
+        .catch((err) => {
+          console.warn('[PWA] Service Worker registration failed:', err);
+        });
+    });
+  }
+
+  // iOS PWA: Show "Add to Home Screen" banner after 3 seconds (first visit only)
+  if (!window.matchMedia('(display-mode: standalone)').matches && !localStorage.getItem('pwa-banner-shown')) {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIOS) {
+      setTimeout(() => {
+        const banner = document.createElement('div');
+        banner.id = 'pwa-ios-banner';
+        banner.style.cssText = `
+          position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+          background: linear-gradient(135deg, #1a1a2e, #16213e);
+          color: white; padding: 16px 20px; text-align: center;
+          border-top: 1px solid rgba(74,144,217,0.4);
+          backdrop-filter: blur(10px);
+          font-family: -apple-system, sans-serif; font-size: 14px;
+          animation: slideUp 0.3s ease;
+        `;
+        banner.innerHTML = `
+          <div style="font-size:18px; margin-bottom:6px;">📲 Thêm vào màn hình chính</div>
+          <div style="opacity:0.85; line-height:1.5;">Nhấn <strong>⎋ Share</strong> → <strong>Add to Home Screen</strong> để dùng như app thật!</div>
+          <button onclick="this.parentElement.remove(); localStorage.setItem('pwa-banner-shown','1')" 
+            style="margin-top:10px; background:rgba(74,144,217,0.3); border:1px solid rgba(74,144,217,0.5); color:white; padding:6px 20px; border-radius:20px; cursor:pointer; font-size:13px;">Đã hiểu ✓</button>
+        `;
+        document.body.appendChild(banner);
+        localStorage.setItem('pwa-banner-shown', '1');
+      }, 3000);
+    }
+  }
+</script>
+</body>
+</html>

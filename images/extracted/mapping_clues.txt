@@ -1,0 +1,100 @@
+
+======================
+IMAGE: img_1_20_p3.png
+PAGE TEXT SNIPPET:
+Which statement is correct when Router R1 receives a packet from User A destined for User В as shown in the exhibit? A. Router R1 replaces the destination IP address in the packet with the IP address of Router R2. B. Router R1 leaves the packet unchanged. C. Router R1 replaces the destination MAC address in the packet with the MAC address of Router R2. D. Router R1 replaces the destination MAC address in the packet with the MAC address of User B. Hide answer Question 6 You asked a network engineer to configure a new logical interface on a Juniper router. The interface must use the fourth usable host address from the 172.16.40.128/29 subnet. Which IP address is correct in this scenario? A. 172.16.40.135 B. 172.16.40.132 C. 172.16.40.130 D. 172.16.40.131 Hide answer 09:57 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 3/10 ...
+
+======================
+IMAGE: img_2_40_p1.png
+PAGE TEXT SNIPPET:
+JN0-106: Junos, Associate (JNCIA-Junos) Full Questions Unsearched Hide all answers Question 21 Click the Exhibit button. The MX204 has 12 built-in ports. Referring to the exhibit, to which interface does the arrow point? A. хе-0/2/7 B. хе-0/0/7 C. хе-0/1/7 D. хе-0/1/6 Hide answer Search all questions and answers... 🔍 X 09:57 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 1/11 ...
+
+======================
+IMAGE: img_3_40_p4.png
+PAGE TEXT SNIPPET:
+You have configured multiple authentication methods on your Junos device, including RADIUS, TACACS+, and local user accounts. A user attempts to log in, but the RADIUS server is unavailable. Referring to the exhibit, which statement is correct? A. The user is prompted to select a different authentication method. B. The login attempt fails immediately. C. Junos will continue to attempt to authenticate with the RADIUS server until it responds. D. Junos attempts the next configured authentication method. Hide answer Question 27 You are creating a new user account using a predefined login class on a Junos device. The account should be able to run operational mode commands such as show interfaces and ping, but should not be allowed to change or commit configuration. Which login class should you assign to this user? A. maintenance B. read-only C. super-user D. operator 09:57 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 4...
+
+======================
+IMAGE: img_4_40_p6.png
+PAGE TEXT SNIPPET:
+Which command displays the output in the format shown in the exhibit? A. show configuration | display inheritance B. show configuration | display set C. show configuration D. show configuration | display detail Hide answer Question 31 You committed a new configuration on a Junos router, but users report connectivity issues. You must quickly restore the previous working configuration without manually editing the candidate configuration. Which command should you use to load the required configuration into the candidate configuration? A. rollback 0 B. show | compare rollback C. rollback 1 D. load override Hide answer 09:57 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 6/11 ...
+
+======================
+IMAGE: img_5_40_p9.png
+PAGE TEXT SNIPPET:
+A. B. user@switch01> request system configuration rescue delete user@switch01> reboot C. D. Hide answer Question 37 You must add a large hierarchical configuration to your Junos device. You also want to completely replace the existing candidate configuration with a new configuration file. Which command would allow you to accomplish these tasks? A. load merge terminal 09:57 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 9/11 ...
+
+======================
+IMAGE: img_6_40_p9.png
+PAGE TEXT SNIPPET:
+A. B. user@switch01> request system configuration rescue delete user@switch01> reboot C. D. Hide answer Question 37 You must add a large hierarchical configuration to your Junos device. You also want to completely replace the existing candidate configuration with a new configuration file. Which command would allow you to accomplish these tasks? A. load merge terminal 09:57 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 9/11 ...
+
+======================
+IMAGE: img_7_40_p9.png
+PAGE TEXT SNIPPET:
+A. B. user@switch01> request system configuration rescue delete user@switch01> reboot C. D. Hide answer Question 37 You must add a large hierarchical configuration to your Junos device. You also want to completely replace the existing candidate configuration with a new configuration file. Which command would allow you to accomplish these tasks? A. load merge terminal 09:57 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 9/11 ...
+
+======================
+IMAGE: img_8_60_p5.png
+PAGE TEXT SNIPPET:
+Referring to the exhibit using the show route 192.168.100.100 command output, over which interface will the traffic be forwarded? A. хе-0/1/3.0 B. хе-0/0/0.0 C. хе-0/1/4.0 D. хе-0/1/2.0 Hide answer Question 50 Which routing table is used for IPv6 unicast routes by default? A. inet.0 B. inet.6 C. inet.1 D. inet6.0 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 5/14 ...
+
+======================
+IMAGE: img_9_60_p7.png
+PAGE TEXT SNIPPET:
+Referring to the exhibit, which two statements about IPv6 routing are correct? (Choose two.) 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 7/14 ...
+
+======================
+IMAGE: img_10_60_p8.png
+PAGE TEXT SNIPPET:
+A. The router is not learning IPv6 routes from peers. B. The router cannot forward traffic to remote IPv6 networks. C. Traffic destined for the 2001:db8:22:108::/64 network is forwarded using the ge- 0/0/5.0 interface. D. The router is connected to the 2001:db8:22:107::/64 network. Hide answer Question 52 Which two statements accurately describe the relationship between the routing table and the forwarding table on a Junos device? (Choose two.) A. The routing table resides in the data plane for fast lookups. B. The routing table selects the best route based on routing information. C. The forwarding table is built from the routing table. D. The routing table is built from the forwarding table. Hide answer Question 53 Click the Exhibit button. You are configuring a Junos router to provide connectivity to a building across town on the network 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 8/14 ...
+
+======================
+IMAGE: img_11_60_p10.png
+PAGE TEXT SNIPPET:
+A. show route table B. show route forwarding-table C. show ip forwarding D. show forwarding-options Hide answer Question 56 Click the Exhibit button. Referring to the exhibit, what is the next hop for IP address 10.0.0.9? A. 192.168.2.1 B. 192.168.1.1 C. 192.168.3.1 D. 192.168.0.1 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 10/14 ...
+
+======================
+IMAGE: img_12_60_p11.png
+PAGE TEXT SNIPPET:
+Hide answer Question 57 Click the Exhibit button. Referring to the exhibit, what would be the next-hop address for the packet destined for the 10.0.0.0/24 network if the ge-0/0/1 interface goes down? A. 10.23.0.3 B. 10.12.0.2 C. 10.12.0.1 D. 10.25.11.1 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 11/14 ...
+
+======================
+IMAGE: img_13_60_p13.png
+PAGE TEXT SNIPPET:
+Which two statements are true about the firewall filter configuration shown in the exhibit? (Choose two.) A. It sends filtered data to a syslog file. B. It applies the filter to a physical interface. C. It evaluates SSH packets egressing from the management interface. D. It counts the number of SSH packets that egress from the source SSH interface. 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 13/14 ...
+
+======================
+IMAGE: img_14_80_p2.png
+PAGE TEXT SNIPPET:
+09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 2/13 ...
+
+======================
+IMAGE: img_15_80_p4.png
+PAGE TEXT SNIPPET:
+How is traffic, sourced from 10.0.0.0/8, treated by the firewall filter shown in the exhibit? A. logged and discarded B. logged and accepted C. logged with no further action D. logged and rejected Hide answer Question 63 Your routing policy has three terms. A route matches the first term with an accept action. In this scenario, what happens next? A. The route is rejected by default. 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 4/13 ...
+
+======================
+IMAGE: img_16_80_p5.png
+PAGE TEXT SNIPPET:
+B. The route is evaluated by the second term. C. The route is sent to the next policy chain. D. The route is accepted and no further terms are evaluated. Hide answer Question 64 Click the Exhibit button. Referring to the exhibit, which two actions will occur when a packet matches the firewall filter? (Choose two.) A. A counter will be incremented. B. The packet will be discarded. C. The packet will be forwarded. D. An ICMP destination unreachable message will be returned. Hide answer 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 5/13 ...
+
+======================
+IMAGE: img_17_80_p12.png
+PAGE TEXT SNIPPET:
+C. The Routing Engine manages the device configuration. D. The Routing Engine forwards transit traffic. Hide answer Question 80 Exhibit: Referring to the exhibit, which route will be selected for a packet destined to IP address 10.50.10.55? A. Route 0.0.0.0/0 will be selected using next hop 203.0.113.1 because the default route matches all destinations and has been active the longest. B. Route 10.50.0.0/16 will be selected using next hop 192.168.1.10 because OSPF has a better preference value than BGP. C. Route 10.50.10.0/24 will be selected using next hop 192.168.1.20 because it has the longest prefix match for the destination address. D. Route 10.0.0.0/8 will be selected using next hop 192.168.1.1 because it was learned from the static routing protocol which has the lowest preference value. Hide answer 09:59 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 12/13 ...
+
+======================
+IMAGE: img_18_100_p1.png
+PAGE TEXT SNIPPET:
+JN0-106: Junos, Associate (JNCIA-Junos) Full Questions Unsearched Hide all answers Question 81 Which statement is correct about traffic flow in the network shown in the exhibit? A. A routing loop can occur if one of the users sends packets to 10.1.99.1. B. Only User A can reach destinations beyond Router R1. C. Router R2 will drop packets destined for user B and user D. Router R1 will discard all packets from all three users. Hide answer Question 82 Exhibit: Search all questions and answers... 🔍 X 10:00 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 1/11 ...
+
+======================
+IMAGE: img_19_100_p2.png
+PAGE TEXT SNIPPET:
+Referring to the exhibit, with firewall filter Packet-Filter attached to an interface, if traffic is sent from 192.168.1.1 to 8.8.8.8 for a UDP DNS query, what will happen to the traffic? A. The traffic will match term 1 and be forwarded. B. The traffic will match the default last term and be forwarded. C. The traffic will match the default last term and be discarded. D. The traffic will match term 3 and be forwarded. Hide answer Question 83 Which two statements about route preference in Junos are correct? (Choose two.) 10:00 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 2/11 ...
+
+======================
+IMAGE: img_20_100_p5.png
+PAGE TEXT SNIPPET:
+Hide answer Question 88 Which statement accurately describes the Junos candidate configuration? A. It is a backup configuration stored in the rollback archive. B. It is the active configuration currently running on the device. C. It is a temporary configuration that becomes active only after a reboot. D. It is a configuration that stores proposed changes before they are committed. Hide answer Question 89 Exhibit: Referring to the exhibit, which routing configuration is required for these two users to access the remote server? A. Users and the server require a default gateway. 10:00 9/6/26 examprep-platform.vercel.app/exams/juniper/jn0-106 https://examprep-platform.vercel.app/exams/juniper/jn0-106 5/11 ...
