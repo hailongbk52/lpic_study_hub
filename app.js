@@ -879,7 +879,12 @@ Please explain in Vietnamese clearly and concisely, focusing on Linux system adm
 IMPORTANT: Format your response in PLAIN TEXT without markdown formatting. DO NOT use special characters like *, #, $, or any markdown syntax. Just use plain text with line breaks and simple formatting. Do not give direct answers if the user is asking for a hint.`;
 
   if (!STATE.chatHistories[qid]) {
-    STATE.chatHistories[qid] = [{ role: "system", content: sysPrompt }];
+    // For Gemini/Google AI Studio: wrap system prompt as a user message
+    // since Gemini's OpenAI-compat endpoint may not support role:"system"
+    STATE.chatHistories[qid] = [
+      { role: "user", content: sysPrompt },
+      { role: "assistant", content: "Hiểu rồi, tôi sẽ giải thích câu hỏi này bằng tiếng Việt về LPIC-1." }
+    ];
   }
   STATE.chatHistories[qid].push({ role: "user", content: text });
 
@@ -906,13 +911,18 @@ IMPORTANT: Format your response in PLAIN TEXT without markdown formatting. DO NO
       }
     }
 
+    // Detect if endpoint likely supports streaming (non-Google endpoints)
+    // Google AI Studio OpenAI-compat does not support SSE streaming reliably
+    const isGoogleEndpoint = url.includes("googleapis.com") || url.includes("generativelanguage");
+    const useStream = !isGoogleEndpoint;
+
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + STATE.aiConfig.apiKey },
       body: JSON.stringify({
         model: selectedModel,
         messages: messages,
-        stream: true
+        stream: useStream
       })
     });
 
