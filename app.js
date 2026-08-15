@@ -1,4 +1,4 @@
-// ========== JNCIA Study Hub - App Logic (Minimax Layout + Antigravity Data) ==========
+// ========== LPIC-1 Study Hub - App Logic ==========
 
 const STATE = {
   questions: QUESTIONS, // loaded from questions.js
@@ -8,13 +8,13 @@ const STATE = {
   pageSize: 10,
   shuffle: false,
   // Study pane: câu đã đánh dấu "Đã biết" thủ công
-  known: new Set(JSON.parse(localStorage.getItem('jncia_known_v3') || '[]')),
+  known: new Set(JSON.parse(localStorage.getItem('lpic1_known_v1') || '[]')),
   // Quiz pane: câu đã trả lời đúng trong quiz (độc lập với phần Học)
-  quizKnown: new Set(JSON.parse(localStorage.getItem('jncia_quiz_known_v1') || '[]')),
-  mistakes: JSON.parse(localStorage.getItem('jncia_mistakes') || '{}'),
+  quizKnown: new Set(JSON.parse(localStorage.getItem('lpic1_quiz_known_v1') || '[]')),
+  mistakes: JSON.parse(localStorage.getItem('lpic1_mistakes') || '{}'),
   quiz: null,
   lang: 'both', // 'en', 'vi', 'both'
-  aiConfig: JSON.parse(localStorage.getItem('jncia_ai_config') || 'null') || { baseUrl: "", model: "", apiKey: "", modelMML: "", chatHeight: 600 },
+  aiConfig: JSON.parse(localStorage.getItem('lpic1_ai_config') || 'null') || { baseUrl: "", model: "", apiKey: "", modelMML: "", chatHeight: 600 },
   chatHistories: {}
 };
 
@@ -60,10 +60,10 @@ function getLocText(content) {
 }
 
 function saveKnown() {
-  localStorage.setItem('jncia_known_v3', JSON.stringify([...STATE.known]));
+  localStorage.setItem('lpic1_known_v1', JSON.stringify([...STATE.known]));
 }
 function saveQuizKnown() {
-  localStorage.setItem('jncia_quiz_known_v1', JSON.stringify([...STATE.quizKnown]));
+  localStorage.setItem('lpic1_quiz_known_v1', JSON.stringify([...STATE.quizKnown]));
 }
 function isKnown(id) { return STATE.known.has(id); }
 function toggleKnown(id) {
@@ -110,30 +110,40 @@ function renderQuestionCard(q, opts = {}) {
     ? `<img class="q-img" src="${q.image}" alt="Exhibit Q${q.id}" loading="lazy">`
     : '';
 
-  const optsHtml = q.options.map((optText, idx) => {
-    const letter = letters[idx];
-
-    return `
-      <div
-        class="opt"
-        data-idx="${idx}"
-        onclick="selectStudyOpt(this, ${q.id}, ${idx}, ${q.multiSelect})"
-      >
-        <span class="opt-letter">${letter}</span>
-        <span>${optText}</span>
+  let optsHtml = '';
+  let correctLetters = '';
+  if (q.fillBlank) {
+    optsHtml = `
+      <div class="fill-blank-container">
+        <input type="text" class="fill-blank-input" placeholder="Nhập câu trả lời của bạn..." id="fb-${q.id}" onkeypress="if(event.key==='Enter') toggleAnswer(${q.id})">
       </div>
     `;
-  }).join('');
+    correctLetters = escapeHtml(q.answer);
+  } else {
+    optsHtml = q.options.map((optText, idx) => {
+      const letter = letters[idx];
+      return `
+        <div
+          class="opt"
+          data-idx="${idx}"
+          onclick="selectStudyOpt(this, ${q.id}, ${idx}, ${q.multiSelect})"
+        >
+          <span class="opt-letter">${letter}</span>
+          <span>${optText}</span>
+        </div>
+      `;
+    }).join('');
 
-  const correctLetters = q.correct
-    .map(idx => letters[idx])
-    .join(', ');
+    correctLetters = q.correct
+      .map(idx => letters[idx])
+      .join(', ');
+  }
 
-  const multiStr = q.multiSelect
-    ? `<span style="color:var(--warn);font-size:0.85em;margin-left:8px;">
-        (Chọn nhiều đáp án)
-       </span>`
-    : '';
+  const multiStr = q.fillBlank
+    ? `<span style="color:var(--info);font-size:0.85em;margin-left:8px;">(Điền từ/lệnh còn thiếu)</span>`
+    : (q.multiSelect
+      ? `<span style="color:var(--warn);font-size:0.85em;margin-left:8px;">(Chọn nhiều đáp án)</span>`
+      : '');
 
   return `
     <div class="q-card" id="q-${q.id}">
@@ -212,6 +222,35 @@ window.toggleAnswer = function (qid) {
 
   const isShowing = el.classList.contains('show');
   const q = STATE.questions.find(x => x.id === qid);
+
+  if (q.fillBlank) {
+    const inputEl = $('#fb-' + qid);
+    if (!isShowing) {
+      const userAns = inputEl.value.trim();
+      const isCorrect = userAns.toLowerCase() === q.answer.toLowerCase();
+      if (isCorrect) {
+        inputEl.classList.add('correct');
+        inputEl.classList.remove('wrong');
+        if (!isKnown(qid)) {
+          toggleKnown(qid);
+          const btn = document.querySelector(`#q-${qid} .q-actions button:first-child`);
+          if (btn) {
+            btn.classList.remove('btn-ghost');
+            btn.classList.add('btn-ok');
+            btn.textContent = '✓ Đã biết';
+          }
+        }
+      } else {
+        inputEl.classList.add('wrong');
+        inputEl.classList.remove('correct');
+      }
+    } else {
+      inputEl.classList.remove('correct', 'wrong');
+    }
+    el.classList.toggle('show');
+    return;
+  }
+
   const optsNodes = document.querySelectorAll(`#q-${qid} .opt`);
 
   if (!isShowing) {
@@ -402,7 +441,27 @@ window.renderQuizQ = function () {
   const topicName = STATE.lang === 'en' ? topicObj.name.en : topicObj.name.vi;
 
   const imgs = q.image ? `<img class="q-img" src="${q.image}">` : '';
-  const multiStr = q.multiSelect ? `<span style="color:var(--warn);font-size:0.85em;margin-left:8px;">(Chọn ${q.correct.length} đáp án)</span>` : '';
+
+  let multiStr = '';
+  let contentHtml = '';
+  if (q.fillBlank) {
+    multiStr = `<span style="color:var(--info);font-size:0.85em;margin-left:8px;">(Điền từ/lệnh còn thiếu)</span>`;
+    contentHtml = `
+      <div class="fill-blank-container" style="margin-top: 14px;">
+        <input type="text" class="fill-blank-input" placeholder="Nhập câu trả lời của bạn..." id="quiz-fb" onkeypress="if(event.key==='Enter') submitQuizAnswer()">
+      </div>
+    `;
+  } else {
+    multiStr = q.multiSelect ? `<span style="color:var(--warn);font-size:0.85em;margin-left:8px;">(Chọn ${q.correct.length} đáp án)</span>` : '';
+    contentHtml = `
+      <div class="opts">${q.options.map((o, i) =>
+      `<div class="opt" data-idx="${i}" onclick="selectQuizOpt(this, ${i}, ${q.multiSelect})">
+          <span class="opt-letter">${letters[i]}</span>
+          <span>${o}</span>
+        </div>`).join('')}
+      </div>
+    `;
+  }
 
   $('#quizQuestion').innerHTML = `
     <div class="q-head">
@@ -413,12 +472,8 @@ window.renderQuizQ = function () {
     </div>
     <div class="q-text">${escapeHtml(q.question)} ${multiStr}</div>
     ${imgs}
-    <div class="opts">${q.options.map((o, i) =>
-    `<div class="opt" data-idx="${i}" onclick="selectQuizOpt(this, ${i}, ${q.multiSelect})">
-        <span class="opt-letter">${letters[i]}</span>
-        <span>${o}</span>
-      </div>`).join('')}
-    </div>`;
+    ${contentHtml}
+  `;
   $('#quizSubmitBtn').style.display = 'inline-block';
   $('#quizNextBtn').style.display = 'none';
 
@@ -442,6 +497,42 @@ window.selectQuizOpt = function (el, idx, isMulti) {
 
 window.submitQuizAnswer = function () {
   const q = STATE.quiz.pool[STATE.quiz.idx];
+
+  if (q.fillBlank) {
+    const inputEl = $('#quiz-fb');
+    const userAns = inputEl.value.trim();
+    if (!userAns) {
+      alert('Vui lòng nhập đáp án!'); return;
+    }
+    const isCorrect = userAns.toLowerCase() === q.answer.toLowerCase();
+
+    if (isCorrect) STATE.quiz.score++;
+    STATE.quiz.answers.push({
+      qid: q.id,
+      picked: userAns,
+      correct: q.answer,
+      ok: isCorrect
+    });
+
+    if (isCorrect) {
+      inputEl.classList.add('correct');
+      STATE.quizKnown.add(q.id);
+      saveQuizKnown();
+    } else {
+      inputEl.classList.add('wrong');
+      const feedback = document.createElement('div');
+      feedback.style.color = 'var(--ok)';
+      feedback.style.fontWeight = 'bold';
+      feedback.style.marginTop = '10px';
+      feedback.innerHTML = `✅ Đáp án đúng: ${escapeHtml(q.answer)}`;
+      inputEl.parentNode.appendChild(feedback);
+    }
+
+    $('#quizSubmitBtn').style.display = 'none';
+    $('#quizNextBtn').style.display = 'inline-block';
+    return;
+  }
+
   if (STATE.quiz.currentSelection.size === 0) {
     alert('Vui lòng chọn đáp án!'); return;
   }
@@ -503,8 +594,8 @@ window.showQuizResult = function () {
 
   const wrongHtml = STATE.quiz.answers.filter(a => !a.ok).map(a => {
     const q = STATE.questions.find(x => x.id === a.qid);
-    const pickedStr = a.picked.map(i => letters[i]).join(', ');
-    const correctStr = a.correct.map(i => letters[i]).join(', ');
+    const pickedStr = q.fillBlank ? escapeHtml(a.picked) : a.picked.map(i => letters[i]).join(', ');
+    const correctStr = q.fillBlank ? escapeHtml(a.correct) : a.correct.map(i => letters[i]).join(', ');
     return `<div style="background:#fdedec;padding:10px;border-radius:6px;margin-bottom:8px">
       <b>Q${a.qid}:</b> ${escapeHtml(q.question).slice(0, 80)}...<br>
       <span style="color:var(--bad)">Bạn chọn: ${pickedStr}</span> |
@@ -658,7 +749,7 @@ window.openSettings = function () {
       modelMML: "",
       chatHeight: 600
     };
-    localStorage.setItem('jncia_ai_config', JSON.stringify(STATE.aiConfig));
+    localStorage.setItem('lpic1_ai_config', JSON.stringify(STATE.aiConfig));
   }
 
   // Ensure new fields exist for old configs
@@ -692,7 +783,7 @@ window.saveSettings = function () {
   STATE.aiConfig.apiKey = $("#aiApiKey").value.trim();
   STATE.aiConfig.modelMML = $("#aiModelMML").value.trim();
   STATE.aiConfig.chatHeight = parseInt($("#aiChatHeight").value) || 600;
-  localStorage.setItem("jncia_ai_config", JSON.stringify(STATE.aiConfig));
+  localStorage.setItem("lpic1_ai_config", JSON.stringify(STATE.aiConfig));
   closeSettings();
   alert("Đã lưu cài đặt AI!");
 }
@@ -729,7 +820,7 @@ window.toggleAIChat = function (qid) {
       </div>
       <div class="ai-popup-content">
         <div class="ai-history" id="ai-hist-${qid}">
-          <div class="ai-msg bot">Xin chào! Tôi là trợ lý AI chuyên về mạng Juniper. Bạn cần tôi giải thích thêm phần nào về câu hỏi này?</div>
+          <div class="ai-msg bot">Xin chào! Tôi là trợ lý AI chuyên về Linux và LPIC-1. Bạn cần tôi giải thích thêm phần nào về câu hỏi này?</div>
         </div>
         <div class="ai-input-row">
           <input type="text" id="ai-inp-${qid}" placeholder="Hỏi AI về câu này..." onkeypress="if(event.key===\'Enter\') sendAIMsg(${qid})">
@@ -779,12 +870,12 @@ window.sendAIMsg = async function (qid) {
   hist.scrollTop = hist.scrollHeight;
 
   const q = STATE.questions.find(x => x.id === qid);
-  const sysPrompt = `You are a helpful JNCIA instructor. The user is asking about Question ${q.id}.
+  const sysPrompt = `You are a helpful LPIC-1 Linux instructor. The user is asking about Question ${q.id}.
 Question: ${q.question}
 Options: ${q.options.join(" | ")}
 Correct answer: indices ${q.correct.join(", ")}
 Explanation: ${q.explanation.en} / ${q.explanation.vi}
-Please explain in Vietnamese clearly and concisely, focusing on Junos OS networking concepts. 
+Please explain in Vietnamese clearly and concisely, focusing on Linux system administration concepts for the LPIC-1 exam. 
 IMPORTANT: Format your response in PLAIN TEXT without markdown formatting. DO NOT use special characters like *, #, $, or any markdown syntax. Just use plain text with line breaks and simple formatting. Do not give direct answers if the user is asking for a hint.`;
 
   if (!STATE.chatHistories[qid]) {

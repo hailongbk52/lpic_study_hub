@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>JNCIA Study Hub - Học ôn JNCIA-Junos</title>
+<title>LPIC-1 Study Hub - Học ôn thi LPIC-1</title>
 
 <!-- SEO -->
-<meta name="description" content="Ứng dụng học ôn thi JNCIA-Junos với 107 câu hỏi chuẩn xác. Luyện tập, thi thử và theo dõi tiến độ học tập.">
+<meta name="description" content="Ứng dụng học ôn thi LPIC-1 (101-500 & 102-500) với 208 câu hỏi chuẩn xác. Luyện tập, thi thử và theo dõi tiến độ học tập.">
 
 <!-- PWA Manifest -->
 <link rel="manifest" href="/manifest.json">
@@ -15,7 +15,7 @@
 <!-- iOS PWA Support -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="JNCIA">
+<meta name="apple-mobile-web-app-title" content="LPIC-1">
 <link rel="apple-touch-icon" href="/icons/icon-152.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png">
 <link rel="apple-touch-startup-image" href="/icons/icon-512.png">
@@ -29,8 +29,8 @@
 <body>
 <div class="container">
 <header>
-  <h1>🎓 JNCIA Study Hub</h1>
-  <h2>Ứng dụng học ôn thi JNCIA-Junos — 107 câu hỏi chuẩn xác</h2>
+  <h1>🐧 LPIC-1 Study Hub</h1>
+  <h2>Học ôn thi LPIC-1 (101-500 &amp; 102-500) — 240 câu hỏi chuẩn xác</h2>
   <div style="position:absolute; top:20px; left:30px; display:flex; gap:10px;">
     <button class="lang-btn active" onclick="openSettings()" style="background:rgba(255,255,255,0.15); color:white; border:1px solid rgba(255,255,255,0.3); font-size:16px; padding: 4px 10px;" title="Cài đặt AI">⚙️</button>
   </div>
@@ -87,7 +87,7 @@
   <!-- QUIZ PANE -->
   <div id="quiz" class="pane">
     <div id="quizSetup">
-      <h3 style="margin-bottom:14px">📝 Thi thử JNCIA</h3>
+      <h3 style="margin-bottom:14px">📝 Thi thử LPIC-1</h3>
       <div class="controls">
         <div>
           <label>Chủ đề: </label>
@@ -97,7 +97,7 @@
           <label>Số câu: </label>
           <select id="quizCount">
             <option>5</option><option selected>10</option><option>20</option>
-            <option>50</option><option value="107">Tất cả (107)</option>
+            <option>50</option><option value="240">Tất cả (240)</option>
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
@@ -120,7 +120,7 @@
 
   <!-- TOPICS PANE -->
   <div id="topics" class="pane">
-    <h3 style="margin-bottom:14px">📚 Các chủ đề JNCIA-Junos</h3>
+    <h3 style="margin-bottom:14px">📚 Các chủ đề LPIC-1</h3>
     <div id="topicsGrid" class="topics-grid"></div>
   </div>
 
@@ -184,8 +184,8 @@
   </div>
 </div>
 
-<script src="questions.js"></script>
-<script src="app.js"></script>
+<script src="questions.js?v=4"></script>
+<script src="app.js?v=4"></script>
 <script>
 // Debug: Check if QUESTIONS and TOPICS loaded correctly
 document.addEventListener('DOMContentLoaded', function() {

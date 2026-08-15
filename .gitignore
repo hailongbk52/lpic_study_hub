@@ -1,0 +1,18 @@
+# IDE & OS files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+.idea/
+.vscode/
+
+# Python caching
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local backups or debug files
+app_backup_local.js
+app_debug.js
+question_source/questions_summary.json

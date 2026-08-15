@@ -1,7 +1,7 @@
-﻿{
-  "name": "JNCIA Study Hub",
-  "short_name": "JNCIA",
-  "description": "Ứng dụng học ôn thi JNCIA-Junos — 107 câu hỏi chuẩn xác",
+{
+  "name": "LPIC-1 Study Hub",
+  "short_name": "LPIC-1",
+  "description": "Học ôn thi LPIC-1 (101-500 & 102-500) — 240 câu hỏi chuẩn xác",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1a2e",
