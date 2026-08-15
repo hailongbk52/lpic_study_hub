@@ -766,6 +766,12 @@ window.openSettings = function () {
   $("#aiModelMML").value = STATE.aiConfig.modelMML || "";
   $("#aiChatHeight").value = STATE.aiConfig.chatHeight || 600;
 
+  const testResult = $("#aiTestResult");
+  if (testResult) {
+    testResult.style.display = "none";
+    testResult.textContent = "";
+  }
+
   const modal = $("#settingsModal");
   if (modal) modal.classList.add("active");
   else console.error("Modal not found");
@@ -786,6 +792,88 @@ window.saveSettings = function () {
   localStorage.setItem("lpic1_ai_config", JSON.stringify(STATE.aiConfig));
   closeSettings();
   alert("Đã lưu cài đặt AI!");
+}
+
+window.testAIConnection = async function () {
+  const baseUrl = $("#aiBaseUrl").value.trim();
+  const model = $("#aiModel").value.trim();
+  const apiKey = $("#aiApiKey").value.trim();
+  const resultDiv = $("#aiTestResult");
+  const testBtn = $("#aiTestBtn");
+
+  if (!baseUrl || !apiKey) {
+    alert("Vui lòng điền Base URL và API Key trước!");
+    return;
+  }
+
+  resultDiv.style.display = "block";
+  resultDiv.style.background = "#f8f9fa";
+  resultDiv.style.color = "var(--text)";
+  resultDiv.textContent = "⏳ Đang kết nối thử...";
+  testBtn.disabled = true;
+
+  try {
+    // 1. First test: list models directly using API key
+    let listModelsUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+    resultDiv.textContent += "\n-> Đang gọi thử Google Models List API...";
+
+    const listRes = await fetch(listModelsUrl);
+    const listBody = await listRes.text();
+    let hasAccess = false;
+    let availableModels = [];
+
+    if (listRes.ok) {
+      try {
+        const listData = JSON.parse(listBody);
+        if (listData.models) {
+          availableModels = listData.models.map(m => m.name.replace("models/", ""));
+          resultDiv.textContent += `\n✅ Danh sách các model khả dụng cho key này:\n${availableModels.join(", ")}`;
+          hasAccess = true;
+        } else {
+          resultDiv.textContent += "\n⚠️ Không tìm thấy models trong response.";
+        }
+      } catch (e) {
+        resultDiv.textContent += "\n⚠️ Lỗi parse JSON listModels.";
+      }
+    } else {
+      resultDiv.textContent += `\n❌ Lỗi Models List API (${listRes.status}): ${listBody}`;
+    }
+
+    // 2. Second test: try the configured chat/completions endpoint
+    resultDiv.textContent += "\n-> Đang gọi thử endpoint Chat Completions...";
+    let completionsUrl = baseUrl;
+    if (!completionsUrl.endsWith("/chat/completions")) {
+      completionsUrl = completionsUrl.replace(/\/+$/, "") + "/chat/completions";
+    }
+
+    const chatRes = await fetch(completionsUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey
+      },
+      body: JSON.stringify({
+        model: model || "gemini-1.5-flash",
+        messages: [{ role: "user", content: "ping" }],
+        stream: false
+      })
+    });
+
+    const chatBody = await chatRes.text();
+    if (chatRes.ok) {
+      resultDiv.style.color = "var(--ok)";
+      resultDiv.textContent += "\n🎉 Kết nối Chat Completions THÀNH CÔNG!";
+    } else {
+      resultDiv.style.color = "var(--bad)";
+      resultDiv.textContent += `\n❌ Kết nối Chat Completions THẤT BẠI (${chatRes.status}): ${chatBody}`;
+    }
+
+  } catch (err) {
+    resultDiv.style.color = "var(--bad)";
+    resultDiv.textContent += "\n❌ Lỗi kết nối mạng: " + err.message;
+  } finally {
+    testBtn.disabled = false;
+  }
 }
 
 window.toggleAIChat = function (qid) {

@@ -177,7 +177,9 @@
       <label>Độ cao hộp thoại AI (px)</label>
       <input type="number" id="aiChatHeight" placeholder="600" min="300" max="900" value="600">
     </div>
+    <div id="aiTestResult" style="margin-top: 12px; font-size: 0.85em; max-height: 150px; overflow-y: auto; display: none; padding: 10px; border-radius: 6px; white-space: pre-wrap; word-break: break-all; border: 1px solid var(--border);"></div>
     <div class="modal-actions">
+      <button class="btn btn-warn" id="aiTestBtn" onclick="testAIConnection()">Kiểm tra kết nối</button>
       <button class="btn btn-ghost" onclick="closeSettings()">Hủy</button>
       <button class="btn btn-pri" onclick="saveSettings()">Lưu cài đặt</button>
     </div>
@@ -185,7 +187,7 @@
 </div>
 
 <script src="questions.js?v=5"></script>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 <script>
 // Debug: Check if QUESTIONS and TOPICS loaded correctly
 document.addEventListener('DOMContentLoaded', function() {
