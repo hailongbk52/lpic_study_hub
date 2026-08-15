@@ -926,7 +926,20 @@ IMPORTANT: Format your response in PLAIN TEXT without markdown formatting. DO NO
       })
     });
 
-    if (!res.ok) throw new Error("Lỗi API: " + res.status);
+    console.log("[AI] Request URL:", url);
+    console.log("[AI] Model:", selectedModel);
+    console.log("[AI] Stream:", useStream);
+
+    if (!res.ok) {
+      let errBody = "";
+      try { errBody = await res.text(); } catch(_) {}
+      let errDetail = "";
+      try {
+        const errJson = JSON.parse(errBody);
+        errDetail = errJson?.error?.message || errJson?.message || errBody;
+      } catch(_) { errDetail = errBody; }
+      throw new Error(`Lỗi API ${res.status}: ${errDetail || res.statusText}`);
+    }
 
     loadMsg.remove();
     const botMsg = document.createElement("div");
