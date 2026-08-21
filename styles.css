@@ -86,6 +86,28 @@ main{padding:25px 30px;min-height:600px}
   .explanation strong{color:var(--pri)}
   .explanation.vi{color:#555;font-style:italic;background:#fff;padding:10px;
     border-radius:6px;margin-top:8px;border-left:3px solid var(--sec)}
+  .vi-explanation{margin-top:10px;line-height:1.7;background:#fff;padding:14px;
+    border-radius:8px;border-left:4px solid #3498db;color:#34495e;white-space:pre-wrap;
+    font-size:0.95em;}
+  .vi-label{font-weight:700;color:#2980b9;margin-bottom:6px;font-size:0.88em;
+    letter-spacing:0.5px;text-transform:uppercase;}
+
+  /* Vietnamese translation block */
+  .vi-translation-block{background:#fffde7;border:1px solid #f9ca24;border-radius:10px;
+    padding:14px 16px;margin:10px 0;border-left:4px solid #f9ca24;}
+  .vi-block-header{font-weight:700;color:#b7791f;font-size:0.9em;margin-bottom:10px;
+    letter-spacing:0.3px;display:flex;align-items:center;gap:6px;}
+  .vi-question-text{font-size:0.97em;color:#4a4a4a;line-height:1.65;margin-bottom:10px;
+    font-style:italic;padding:8px 12px;background:rgba(255,255,255,0.7);
+    border-radius:6px;border-left:3px solid #f9ca24;}
+  .vi-opts-list{display:grid;gap:5px;margin-top:6px;}
+  .vi-opt{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-radius:7px;
+    background:#fff;border:1px solid #e8e8e8;font-size:0.9em;color:#555;}
+  .vi-opt-correct{background:#eafaf1;border-color:#27ae60;color:#1a6b3c;font-weight:600;}
+  .vi-opt-letter{width:22px;height:22px;border-radius:50%;background:#b7791f;color:#fff;
+    text-align:center;line-height:22px;font-size:0.78em;font-weight:700;flex-shrink:0;}
+  .vi-opt-correct .vi-opt-letter{background:#27ae60;}
+  .vi-correct-mark{color:#27ae60;font-weight:700;margin-left:4px;}
   .ai-wrapper{margin-top:12px;}
 .progress-bar{background:var(--bg);height:14px;border-radius:7px;overflow:hidden;
   margin-top:4px}

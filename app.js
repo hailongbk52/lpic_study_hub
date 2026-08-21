@@ -15,7 +15,9 @@ const STATE = {
   quiz: null,
   lang: 'both', // 'en', 'vi', 'both'
   aiConfig: JSON.parse(localStorage.getItem('lpic1_ai_config') || 'null') || { baseUrl: "", model: "", apiKey: "", modelMML: "", chatHeight: 600 },
-  chatHistories: {}
+  chatHistories: {},
+  // Lưu thứ tự đáp án đã xáo trộn cho từng câu (key: qid, value: {shuffledOptions, newCorrect, indexMap})
+  optionShuffleMap: {}
 };
 
 const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -31,6 +33,76 @@ function shuffleArray(a) {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+/**
+ * Xáo trộn thứ tự đáp án của câu hỏi, trả về:
+ * - shuffledOptions: mảng options đã xáo
+ * - newCorrect: mảng indices đúng theo thứ tự mới
+ * - newToOld: map từ index mới → index gốc
+ * Kết quả được lưu cache vào STATE.optionShuffleMap[qid]
+ */
+function getShuffledQuestion(q) {
+  // Fill-blank không cần shuffle
+  if (q.fillBlank || !q.options || q.options.length === 0) {
+    return { shuffledOptions: q.options, newCorrect: q.correct, newToOld: null };
+  }
+
+  // Dùng cache nếu đã shuffle rồi
+  if (STATE.optionShuffleMap[q.id]) {
+    return STATE.optionShuffleMap[q.id];
+  }
+
+  // Tạo thứ tự mới bằng cách shuffle mảng index gốc
+  const indices = q.options.map((_, i) => i);
+  const shuffledIndices = shuffleArray(indices); // shuffledIndices[newIdx] = oldIdx
+
+  const shuffledOptions = shuffledIndices.map(oldIdx => q.options[oldIdx]);
+
+  // Map: index mới → index gốc
+  const newToOld = shuffledIndices; // newToOld[newIdx] = oldIdx
+
+  // Map: index gốc → index mới
+  const oldToNew = {};
+  shuffledIndices.forEach((oldIdx, newIdx) => { oldToNew[oldIdx] = newIdx; });
+
+  // Đổi correct indices sang thứ tự mới
+  const newCorrect = q.correct.map(oldIdx => oldToNew[oldIdx]);
+
+  const result = { shuffledOptions, newCorrect, newToOld, oldToNew };
+  STATE.optionShuffleMap[q.id] = result;
+  return result;
+}
+
+/**
+ * Xáo trộn đáp án cho quiz (dùng riêng quiz shuffle map)
+ * Mỗi câu quiz được shuffle 1 lần và cache trong STATE.quizShuffleMap
+ */
+function getShuffledQuizQuestion(q) {
+  if (q.fillBlank || !q.options || q.options.length === 0) {
+    return { shuffledOptions: q.options, newCorrect: q.correct, newToOld: null };
+  }
+
+  if (!STATE.quiz || !STATE.quiz.shuffleMap) {
+    if (STATE.quiz) STATE.quiz.shuffleMap = {};
+  }
+  const shuffleMap = STATE.quiz ? STATE.quiz.shuffleMap : {};
+
+  if (shuffleMap[q.id]) {
+    return shuffleMap[q.id];
+  }
+
+  const indices = q.options.map((_, i) => i);
+  const shuffledIndices = shuffleArray(indices);
+  const shuffledOptions = shuffledIndices.map(oldIdx => q.options[oldIdx]);
+  const newToOld = shuffledIndices;
+  const oldToNew = {};
+  shuffledIndices.forEach((oldIdx, newIdx) => { oldToNew[oldIdx] = newIdx; });
+  const newCorrect = q.correct.map(oldIdx => oldToNew[oldIdx]);
+
+  const result = { shuffledOptions, newCorrect, newToOld, oldToNew };
+  if (STATE.quiz) shuffleMap[q.id] = result;
+  return result;
 }
 
 function escapeHtml(unsafe) {
@@ -99,12 +171,12 @@ function setLanguage(lang) {
 }
 
 // ===== RENDER QUESTION CARD =====
-// ===== RENDER QUESTION CARD =====
 function renderQuestionCard(q, opts = {}) {
   const knownClass = isKnown(q.id) ? 'btn-ok' : 'btn-ghost';
   const knownText = isKnown(q.id) ? '✓ Đã biết' : 'Đánh dấu';
   const topicObj = getTopicById(q.topicId);
-  const topicName = STATE.lang === 'en' ? topicObj.name.en : topicObj.name.vi;
+  // Luôn hiển thị tên topic bằng tiếng Anh ở phần học
+  const topicName = topicObj.name.en;
 
   const imgs = q.image
     ? `<img class="q-img" src="${q.image}" alt="Exhibit Q${q.id}" loading="lazy">`
@@ -112,45 +184,95 @@ function renderQuestionCard(q, opts = {}) {
 
   let optsHtml = '';
   let correctLetters = '';
+
   if (q.fillBlank) {
     optsHtml = `
       <div class="fill-blank-container">
-        <input type="text" class="fill-blank-input" placeholder="Nhập câu trả lời của bạn..." id="fb-${q.id}" onkeypress="if(event.key==='Enter') toggleAnswer(${q.id})">
+        <input type="text" class="fill-blank-input" placeholder="Type your answer..." id="fb-${q.id}" onkeypress="if(event.key==='Enter') toggleAnswer(${q.id})">
       </div>
     `;
     correctLetters = escapeHtml(q.answer);
   } else {
-    optsHtml = q.options.map((optText, idx) => {
-      const letter = letters[idx];
+    // Lấy options đã xáo trộn
+    const shuffled = getShuffledQuestion(q);
+    optsHtml = shuffled.shuffledOptions.map((optText, newIdx) => {
+      const letter = letters[newIdx];
       return `
         <div
           class="opt"
-          data-idx="${idx}"
-          onclick="selectStudyOpt(this, ${q.id}, ${idx}, ${q.multiSelect})"
+          data-idx="${newIdx}"
+          onclick="selectStudyOpt(this, ${q.id}, ${newIdx}, ${q.multiSelect})"
         >
           <span class="opt-letter">${letter}</span>
-          <span>${optText}</span>
+          <span>${escapeHtml(optText)}</span>
         </div>
       `;
     }).join('');
 
-    correctLetters = q.correct
-      .map(idx => letters[idx])
+    // correctLetters dựa trên thứ tự mới (chỉ dùng trong answer section)
+    correctLetters = shuffled.newCorrect
+      .map(newIdx => letters[newIdx])
       .join(', ');
   }
 
   const multiStr = q.fillBlank
-    ? `<span style="color:var(--info);font-size:0.85em;margin-left:8px;">(Điền từ/lệnh còn thiếu)</span>`
+    ? `<span style="color:var(--info);font-size:0.85em;margin-left:8px;">(Fill in the blank)</span>`
     : (q.multiSelect
-      ? `<span style="color:var(--warn);font-size:0.85em;margin-left:8px;">(Chọn nhiều đáp án)</span>`
+      ? `<span style="color:var(--warn);font-size:0.85em;margin-left:8px;">(Select ${q.correct.length} answers)</span>`
       : '');
+
+  // Phần giải thích tiếng Việt (hiển thị khi bấm Đáp án)
+  const explanationVi = q.explanation && q.explanation.vi
+    ? escapeHtml(q.explanation.vi).replace(/\n/g, '<br>')
+    : (q.explanation && q.explanation.en ? escapeHtml(q.explanation.en).replace(/\n/g, '<br>') : '');
+
+  // Bản dịch tiếng Việt của câu hỏi
+  const questionViText = q.questionVi ? escapeHtml(q.questionVi) : '';
+
+  // Bản dịch tiếng Việt của đáp án (shuffled, hiển thị đầy đủ, có đánh dấu đáp án đúng)
+  let optsViHtml = '';
+  if (!q.fillBlank && q.optionsVi && q.optionsVi.length > 0) {
+    const shuffled = getShuffledQuestion(q);
+    optsViHtml = shuffled.newToOld
+      ? shuffled.newToOld.map((oldIdx, newIdx) => {
+          const letter = letters[newIdx];
+          const viText = escapeHtml(q.optionsVi[oldIdx] || q.options[oldIdx] || '');
+          const isCorrect = shuffled.newCorrect.includes(newIdx);
+          const correctMark = isCorrect ? ' <span class="vi-correct-mark">✓</span>' : '';
+          return `<div class="vi-opt${isCorrect ? ' vi-opt-correct' : ''}">`
+            + `<span class="vi-opt-letter">${letter}</span>`
+            + `<span>${viText}${correctMark}</span>`
+            + `</div>`;
+        }).join('')
+      : q.optionsVi.map((viText, idx) => {
+          const letter = letters[idx];
+          const isCorrect = q.correct.includes(idx);
+          const correctMark = isCorrect ? ' <span class="vi-correct-mark">✓</span>' : '';
+          return `<div class="vi-opt${isCorrect ? ' vi-opt-correct' : ''}">`
+            + `<span class="vi-opt-letter">${letter}</span>`
+            + `<span>${escapeHtml(viText)}${correctMark}</span>`
+            + `</div>`;
+        }).join('');
+  } else if (q.fillBlank && q.questionVi) {
+    // Fill-blank: chỉ hiển câu hỏi vi
+    optsViHtml = '';
+  }
+
+  const hasViTranslation = !!(questionViText || optsViHtml);
+  const viTranslationBlock = hasViTranslation ? `
+    <div class="vi-translation-block">
+      <div class="vi-block-header">🇻🇳 Bản dịch tiếng Việt</div>
+      ${questionViText ? `<div class="vi-question-text">${questionViText}</div>` : ''}
+      ${optsViHtml ? `<div class="vi-opts-list">${optsViHtml}</div>` : ''}
+    </div>
+  ` : '';
 
   return `
     <div class="q-card" id="q-${q.id}">
 
       <div class="q-head">
         <div>
-          <span class="q-num">Câu ${q.id}</span>
+          <span class="q-num">Question ${q.id}</span>
           <span class="q-topic">${escapeHtml(topicName)}</span>
         </div>
 
@@ -175,24 +297,27 @@ function renderQuestionCard(q, opts = {}) {
         ${optsHtml}
       </div>
 
-      <!-- NÚT ĐÁP ÁN CHUYỂN XUỐNG ĐÂY -->
+      <!-- NÚT ĐÁP ÁN -->
       <div class="answer-actions">
         <button
           class="btn btn-warn"
           onclick="toggleAnswer(${q.id})"
         >
-          👁️ Đáp án
+          👁️ Show Answer
         </button>
       </div>
 
       <div class="answer-section" id="ans-${q.id}">
         <div class="correct-ans">
-          ✅ Đáp án đúng: ${correctLetters}
+          ✅ Correct Answer: ${correctLetters}
         </div>
 
-        <div class="explanation">
-          ${getLocText(q.explanation)}
-        </div>
+        ${viTranslationBlock}
+
+        ${explanationVi ? `<div class="explanation vi-explanation">
+          <div class="vi-label">📚 Giải thích:</div>
+          ${explanationVi}
+        </div>` : ''}
 
         <div class="ai-wrapper">
           <button
@@ -251,6 +376,10 @@ window.toggleAnswer = function (qid) {
     return;
   }
 
+  // Lấy thứ tự đáp án đã xáo trộn
+  const shuffled = getShuffledQuestion(q);
+  const shuffledCorrect = shuffled.newCorrect; // indices đúng theo thứ tự mới
+
   const optsNodes = document.querySelectorAll(`#q-${qid} .opt`);
 
   if (!isShowing) {
@@ -258,9 +387,9 @@ window.toggleAnswer = function (qid) {
     let selectedCount = 0;
 
     optsNodes.forEach(opt => {
-      const idx = parseInt(opt.dataset.idx);
+      const newIdx = parseInt(opt.dataset.idx);
       const isSelected = opt.classList.contains('selected');
-      const isCorrect = q.correct.includes(idx);
+      const isCorrect = shuffledCorrect.includes(newIdx);
 
       if (isSelected) selectedCount++;
 
@@ -301,6 +430,9 @@ window.toggleAnswer = function (qid) {
 
 // ===== STUDY PANE =====
 window.renderCurrent = function () {
+  // Xóa cache shuffle khi render lại trang (xáo mới mỗi lần)
+  STATE.optionShuffleMap = {};
+
   const all = getFiltered();
   const total = all.length;
   const totalPages = Math.max(1, Math.ceil(total / STATE.pageSize));
@@ -309,8 +441,8 @@ window.renderCurrent = function () {
   const page = all.slice(start, start + STATE.pageSize);
   $('#questionsList').innerHTML = page.length
     ? page.map(q => renderQuestionCard(q)).join('')
-    : '<div class="empty">Không có câu hỏi nào trong chủ đề này.</div>';
-  $('#pageInfo').textContent = `Trang ${STATE.currentPage} / ${totalPages} — ${total} câu`;
+    : '<div class="empty">No questions found for this topic.</div>';
+  $('#pageInfo').textContent = `Page ${STATE.currentPage} / ${totalPages} — ${total} questions`;
   $('#prevBtn').disabled = STATE.currentPage <= 1;
   $('#nextBtn').disabled = STATE.currentPage >= totalPages;
   $('#prevBtnBottom').disabled = STATE.currentPage <= 1;
@@ -423,7 +555,7 @@ window.startQuiz = function () {
   if (pool.length === 0) {
     alert("Không có câu hỏi nào!"); return;
   }
-  STATE.quiz = { pool, idx: 0, score: 0, answers: [], skipKnown, _topicId: topicId };
+  STATE.quiz = { pool, idx: 0, score: 0, answers: [], skipKnown, _topicId: topicId, shuffleMap: {} };
   $('#quizSetup').style.display = 'none';
   $('#quizArea').style.display = 'block';
   $('#quizResult').style.display = 'none';
@@ -438,26 +570,30 @@ window.renderQuizQ = function () {
   $('#quizProg').style.width = pct + '%';
 
   const topicObj = getTopicById(q.topicId);
-  const topicName = STATE.lang === 'en' ? topicObj.name.en : topicObj.name.vi;
+  // Luôn hiển thị tên topic tiếng Anh trong quiz
+  const topicName = topicObj.name.en;
 
   const imgs = q.image ? `<img class="q-img" src="${q.image}">` : '';
 
   let multiStr = '';
   let contentHtml = '';
   if (q.fillBlank) {
-    multiStr = `<span style="color:var(--info);font-size:0.85em;margin-left:8px;">(Điền từ/lệnh còn thiếu)</span>`;
+    multiStr = `<span style="color:var(--info);font-size:0.85em;margin-left:8px;">(Fill in the blank)</span>`;
     contentHtml = `
       <div class="fill-blank-container" style="margin-top: 14px;">
-        <input type="text" class="fill-blank-input" placeholder="Nhập câu trả lời của bạn..." id="quiz-fb" onkeypress="if(event.key==='Enter') submitQuizAnswer()">
+        <input type="text" class="fill-blank-input" placeholder="Type your answer..." id="quiz-fb" onkeypress="if(event.key==='Enter') submitQuizAnswer()">
       </div>
     `;
   } else {
-    multiStr = q.multiSelect ? `<span style="color:var(--warn);font-size:0.85em;margin-left:8px;">(Chọn ${q.correct.length} đáp án)</span>` : '';
+    multiStr = q.multiSelect ? `<span style="color:var(--warn);font-size:0.85em;margin-left:8px;">(Select ${q.correct.length} answers)</span>` : '';
+
+    // Xáo trộn đáp án trong quiz (dùng riêng quiz shuffle map)
+    const shuffled = getShuffledQuizQuestion(q);
     contentHtml = `
-      <div class="opts">${q.options.map((o, i) =>
-      `<div class="opt" data-idx="${i}" onclick="selectQuizOpt(this, ${i}, ${q.multiSelect})">
-          <span class="opt-letter">${letters[i]}</span>
-          <span>${o}</span>
+      <div class="opts">${shuffled.shuffledOptions.map((o, newIdx) =>
+      `<div class="opt" data-idx="${newIdx}" onclick="selectQuizOpt(this, ${newIdx}, ${q.multiSelect})">
+          <span class="opt-letter">${letters[newIdx]}</span>
+          <span>${escapeHtml(o)}</span>
         </div>`).join('')}
       </div>
     `;
@@ -466,7 +602,7 @@ window.renderQuizQ = function () {
   $('#quizQuestion').innerHTML = `
     <div class="q-head">
       <div>
-        <span class="q-num">Câu ${idx + 1}/${total}</span>
+        <span class="q-num">Question ${idx + 1}/${total}</span>
         <span class="q-topic">${escapeHtml(topicName)}</span>
       </div>
     </div>
@@ -502,7 +638,7 @@ window.submitQuizAnswer = function () {
     const inputEl = $('#quiz-fb');
     const userAns = inputEl.value.trim();
     if (!userAns) {
-      alert('Vui lòng nhập đáp án!'); return;
+      alert('Please enter your answer!'); return;
     }
     const isCorrect = userAns.toLowerCase() === q.answer.toLowerCase();
 
@@ -524,7 +660,7 @@ window.submitQuizAnswer = function () {
       feedback.style.color = 'var(--ok)';
       feedback.style.fontWeight = 'bold';
       feedback.style.marginTop = '10px';
-      feedback.innerHTML = `✅ Đáp án đúng: ${escapeHtml(q.answer)}`;
+      feedback.innerHTML = `✅ Correct Answer: ${escapeHtml(q.answer)}`;
       inputEl.parentNode.appendChild(feedback);
     }
 
@@ -534,30 +670,38 @@ window.submitQuizAnswer = function () {
   }
 
   if (STATE.quiz.currentSelection.size === 0) {
-    alert('Vui lòng chọn đáp án!'); return;
+    alert('Please select an answer!'); return;
   }
   if (q.multiSelect && STATE.quiz.currentSelection.size !== q.correct.length) {
-    alert(`Vui lòng chọn đủ ${q.correct.length} đáp án!`); return;
+    alert(`Please select ${q.correct.length} answers!`); return;
   }
 
-  const selectedArr = Array.from(STATE.quiz.currentSelection).sort();
-  const correctArr = [...q.correct].sort();
-  const isCorrect = JSON.stringify(selectedArr) === JSON.stringify(correctArr);
+  // Dùng shuffle map của quiz để so sánh
+  const shuffled = getShuffledQuizQuestion(q);
+  const selectedNewIdxArr = Array.from(STATE.quiz.currentSelection).sort((a,b)=>a-b);
+  // Chuyển selected (new idx) sang old idx để so sánh với q.correct
+  const selectedOldIdxArr = selectedNewIdxArr.map(newIdx => shuffled.newToOld[newIdx]).sort((a,b)=>a-b);
+  const correctOldArr = [...q.correct].sort((a,b)=>a-b);
+  const isCorrect = JSON.stringify(selectedOldIdxArr) === JSON.stringify(correctOldArr);
 
   if (isCorrect) STATE.quiz.score++;
   STATE.quiz.answers.push({
     qid: q.id,
-    picked: selectedArr,
-    correct: correctArr,
+    picked: selectedNewIdxArr, // new indices (cho display)
+    pickedOld: selectedOldIdxArr, // old indices (original)
+    correct: correctOldArr,      // old indices (original)
+    shuffled: shuffled,           // lưu để hiển thị kết quả
     ok: isCorrect
   });
 
+  // Tô màu đáp án theo new indices
+  const correctNewIdxArr = shuffled.newCorrect;
   document.querySelectorAll('#quizQuestion .opt').forEach(o => {
-    const idx = parseInt(o.dataset.idx);
-    if (correctArr.includes(idx)) {
+    const newIdx = parseInt(o.dataset.idx);
+    if (correctNewIdxArr.includes(newIdx)) {
       o.classList.add('correct');
       o.classList.remove('selected');
-    } else if (selectedArr.includes(idx) && !isCorrect) {
+    } else if (selectedNewIdxArr.includes(newIdx)) {
       o.classList.add('wrong');
       o.classList.remove('selected');
     }
@@ -586,43 +730,44 @@ window.showQuizResult = function () {
   // Tính số câu bỏ qua dựa trên quizKnown
   const skippedCount = STATE.quiz.skipKnown
     ? Array.from(STATE.quizKnown).filter(id => {
-        const q = STATE.questions.find(x => x.id === id);
-        return q && (STATE.quiz._topicId === 'all' || q.topicId === parseInt(STATE.quiz._topicId));
-      }).length
+      const q = STATE.questions.find(x => x.id === id);
+      return q && (STATE.quiz._topicId === 'all' || q.topicId === parseInt(STATE.quiz._topicId));
+    }).length
     : 0;
   $('#quizResult').style.display = 'block';
 
   const wrongHtml = STATE.quiz.answers.filter(a => !a.ok).map(a => {
     const q = STATE.questions.find(x => x.id === a.qid);
-    const pickedStr = q.fillBlank ? escapeHtml(a.picked) : a.picked.map(i => letters[i]).join(', ');
+    // Hiển thị đáp án theo original index
+    const pickedStr = q.fillBlank ? escapeHtml(a.picked) : (a.pickedOld || a.picked).map(i => letters[i]).join(', ');
     const correctStr = q.fillBlank ? escapeHtml(a.correct) : a.correct.map(i => letters[i]).join(', ');
     return `<div style="background:#fdedec;padding:10px;border-radius:6px;margin-bottom:8px">
       <b>Q${a.qid}:</b> ${escapeHtml(q.question).slice(0, 80)}...<br>
-      <span style="color:var(--bad)">Bạn chọn: ${pickedStr}</span> |
-      <span style="color:var(--ok)">Đúng: ${correctStr}</span>
+      <span style="color:var(--bad)">Your answer: ${pickedStr}</span> |
+      <span style="color:var(--ok)">Correct: ${correctStr}</span>
     </div>`;
   }).join('');
 
   const hasWrong = STATE.quiz.answers.some(a => !a.ok);
   const skippedBadge = skippedCount > 0
-    ? `<p style="font-size:0.85em;color:var(--text-secondary);margin-top:4px">⚡ Đã bỏ qua <b>${skippedCount}</b> câu đã trả lời đúng trước đó</p>`
+    ? `<p style="font-size:0.85em;color:var(--text-secondary);margin-top:4px">⚡ Skipped <b>${skippedCount}</b> previously correct questions</p>`
     : '';
 
   const retryWrongBtn = hasWrong
-    ? `<button class="btn btn-warn" onclick="retryWrongOnly()" style="margin-top:14px">🔁 Ôn lại câu sai (${STATE.quiz.answers.filter(a=>!a.ok).length} câu)</button>`
+    ? `<button class="btn btn-warn" onclick="retryWrongOnly()" style="margin-top:14px">🔁 Retry wrong answers (${STATE.quiz.answers.filter(a => !a.ok).length})</button>`
     : '';
 
   $('#quizResult').innerHTML = `
     <div class="quiz-result">
-      <h3>🎉 Kết quả</h3>
+      <h3>🎉 Results</h3>
       <div class="score-circle" data-pct="${pct}%" style="--pct:${pct}%"></div>
-      <p>Bạn đúng <b>${STATE.quiz.score}/${total}</b> câu (${pct}%)</p>
+      <p>You got <b>${STATE.quiz.score}/${total}</b> correct (${pct}%)</p>
       ${skippedBadge}
       <div style="margin-top:18px;text-align:left">
-        ${wrongHtml || '<p style="color:var(--ok)">🎊 Hoàn hảo! Bạn trả lời đúng hết!</p>'}
+        ${wrongHtml || '<p style="color:var(--ok)">🎊 Perfect! All answers correct!</p>'}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px">
-        <button class="btn btn-pri" onclick="restartQuiz()">↻ Về trang chọn</button>
+        <button class="btn btn-pri" onclick="restartQuiz()">↻ Back to Setup</button>
         ${retryWrongBtn}
       </div>
     </div>`;
@@ -929,7 +1074,7 @@ window.toggleAIChat = function (qid) {
     setTimeout(() => {
       const inp = $("#ai-inp-" + qid);
       if (inp) {
-        inp.value = "Hãy giải thích đáp án";
+        inp.value = "Hãy giải thích ngắn gọn câu hỏi và đáp án, chỉ ra các keyword để nhớ khi làm bài thi lpic";
         sendAIMsg(qid);
       }
     }, 300);
@@ -1020,12 +1165,12 @@ IMPORTANT: Format your response in PLAIN TEXT without markdown formatting. DO NO
 
     if (!res.ok) {
       let errBody = "";
-      try { errBody = await res.text(); } catch(_) {}
+      try { errBody = await res.text(); } catch (_) { }
       let errDetail = "";
       try {
         const errJson = JSON.parse(errBody);
         errDetail = errJson?.error?.message || errJson?.message || errBody;
-      } catch(_) { errDetail = errBody; }
+      } catch (_) { errDetail = errBody; }
       throw new Error(`Lỗi API ${res.status}: ${errDetail || res.statusText}`);
     }
 
